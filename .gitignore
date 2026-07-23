@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Timeline exports contain sensitive location history. Only synthetic fixtures
+# explicitly added under tests/fixtures belong in this repository.
+*.json
+!tests/fixtures/*.json
+

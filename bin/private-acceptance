@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Print content-free acceptance diagnostics for a private Timeline export."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
+
+from google_timeline_parser import Record, parse_file
+
+
+KINDS = ("visit", "activity", "timelinePath", "timelineMemory")
+BASELINE = {
+    "records": 55_532,
+    "visit": 20_129,
+    "activity": 18_848,
+    "timelinePath": 16_500,
+    "timelineMemory": 55,
+    "start_dates": 3_326,
+    "errors": 0,
+}
+
+
+def diagnostics(path: Path) -> dict[str, object]:
+    counts: Counter[str] = Counter()
+    dates: set[str] = set()
+    starts: list[datetime] = []
+    ends: list[datetime] = []
+    for result in parse_file(path):
+        if not isinstance(result, Record):
+            counts["errors"] += 1
+            continue
+        counts["records"] += 1
+        counts[result.kind] += 1
+        dates.add(result.start.date().isoformat())
+        starts.append(result.start)
+        ends.append(result.end)
+    return {
+        "records": counts["records"],
+        **{kind: counts[kind] for kind in KINDS},
+        "start_dates": len(dates),
+        "errors": counts["errors"],
+        "earliest_start": min(starts).isoformat() if starts else None,
+        "latest_start": max(starts).isoformat() if starts else None,
+        "latest_end": max(ends).isoformat() if ends else None,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("export", type=Path)
+    parser.add_argument("--expect-life-portrait-baseline", action="store_true")
+    args = parser.parse_args()
+    result = diagnostics(args.export)
+    print(json.dumps(result, indent=2))
+    if args.expect_life_portrait_baseline:
+        return 0 if all(result[key] == value for key, value in BASELINE.items()) else 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+

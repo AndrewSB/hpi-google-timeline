@@ -1,0 +1,33 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install pytest
+      - run: python -m pip install --no-deps .
+      - run: python -m pytest tests/test_parser.py
+
+  hpi-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install '.[hpi,test]' build
+      - run: python -m pytest
+      - run: python -m build
+      - run: python -m pip install --force-reinstall dist/*.whl
+      - run: cd /tmp && python -c 'import google_timeline_parser, my.google_timeline.parser, my.location.google_timeline'
