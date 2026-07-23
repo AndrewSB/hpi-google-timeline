@@ -5,9 +5,9 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+uv.lock
 
 # Timeline exports contain sensitive location history. Only synthetic fixtures
 # explicitly added under tests/fixtures belong in this repository.
 *.json
 !tests/fixtures/*.json
-
